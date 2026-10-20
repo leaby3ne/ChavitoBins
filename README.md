@@ -20,94 +20,121 @@ Desarrollado por **Nekkro**. Un sistema de visión artificial y motor de reglas 
 - **ONNX Runtime (`onnxruntime`)**: Motor de inferencia ultrarrápido y ligero para ejecutar modelos de visión en local usando CPU, evitando la dependencia de frameworks pesados como PyTorch o CUDA en producción.
 - **YOLOv8 / MobileNet**: Arquitecturas evaluadas para detección y localización de objetos con alto rendimiento en tiempo real.
 - **NumPy**: Operaciones matriciales de alta velocidad sobre los canales de imagen.
-- **JSON**: Formato ligero y desacoplado para almacenar la base de reglas de negocio (`waste_rules.json`).
+- **JSON**: Formato ligero y desacoplado para almacenar la base de reglas de negocio (`reglas_residuos.json`).
 - **Pytest**: Entorno de pruebas unitarias para validar las decisiones del motor de reglas sin necesidad de invocar la cámara web.
 
 ---
 
-## Arquitectura del Sistema
+# Arquitectura del Sistema
 
 ```text
                         +-----------------------+
                         |      Cámara Web       |
                         +-----------+-----------+
                                     |
-                                    v [Frames]
+                                    v [Fotogramas]
                         +-----------------------+
-                        |    `camera.py`        |
+                        |      `camara.py`      |
                         +-----------+-----------+
                                     |
                                     v
                         +-----------------------+
-                        |   `preprocessing.py`  |
+                        |   `preprocesamiento.py`|
                         +-----------+-----------+
                                     |
                                     v
                         +-----------------------+
-                        |     `vision.py`       |
+                        |      `vision.py`      |
                         | (YOLOv8 / ONNX Local) |
                         +-----------+-----------+
                                     |
-                                    v [Detecciones + Bounding Boxes + Confidence]
+                                    v [Detecciones + Cajas Delimitadoras + Confianza]
                         +-----------------------+
-                        |   `classifier.py`     |
+                        |    `clasificador.py`  |
                         +-----------+-----------+
                                     |
                                     +<--- Consultas <---+
                                     |                   |
                                     v                   |
-                        +-----------------------+  +----+------------------+
-                        | `knowledge_base.py`   |--| data/waste_rules.json |
-                        +-----------------------+  +-----------------------+
+                        +-----------------------+  +----+-------------------------+
+                        | `base_conocimiento.py`|--| data/reglas_residuos.json   |
+                        +-----------------------+  +------------------------------+
                                     |
                                     v [Objeto Clasificado / Estado / Advertencias]
                         +-----------------------+
-                        |     `display.py`      |
+                        |    `visualizador.py`  |
                         |    (OpenCV Canvas)    |
                         +-----------------------+
-```
 
-Organización del Proyecto
+---
 
-    /chavitobins
+## Mapeo y Lógica de Disposición (Normativa Colombia)
 
-        app.py: Coordinador del flujo principal y bucle de la cámara.
+| Caneca / Categoria | Tipo de Residuo Cubierto | Ejemplos Comunes |
+| --- | --- | --- |
+| **Verde** | Orgánicos aprovechables | Restos de comida, cáscaras de frutas/verduras, desechos agrícolas y residuos de jardinería. |
+| **Negra** | No aprovechables / Ordinarios | Servilletas usadas, papel higiénico, cartón/plástico contaminado con comida, empaques metalizados de snacks. |
+| **Roja** | Peligrosos e Infecciosos | Elementos con riesgo biológico, jeringas, elementos cortopunzantes, tapabocas o guantes de látex. |
+| **Manejo Especial** | RAEES / Pilas / Químicos | Pilas usadas, baterías, medicamentos vencidos, aceite de cocina usado (requieren ruta selectiva). |
 
-        camera.py: Inicialización, lectura y liberación de la cámara web.
+> **Nota Técnica:** En Colombia, el código de colores ordinario asigna la caneca **Blanca** a los reciclables limpios y secos. Para el alcance de este proyecto (enfocado en Verde, Negra y Roja), los residuos reciclables que se encuentren sucios o contaminados son dirigidos a la **Caneca Negra** por criterio de precaución.
 
-        vision.py: Carga del modelo (YOLOv8 / ONNX) e inferencia visual.
+---
 
-        preprocessing.py: Redimensionamiento, normalización y adaptaciones para el modelo.
+## Por qué un motor de reglas separado del modelo visual
 
-        knowledge_base.py: Carga, indexación y validación del motor de reglas.
+* **Flexibilidad normativa:** Las regulaciones ambientales cambian por municipio o legislación sin necesidad de reentrenar la red neuronal.
+* **Seguridad en residuos peligrosos:** Previene que un objeto detectado con alta confianza visual (ej. una jeringa) sea clasificado incorrectamente por falta de contexto normativo.
+* **Manejo de ambigüedad:** Si el modelo detecta un empaque sucio con baja confianza, el motor de reglas asigna por defecto la **Caneca Negra** por criterio de precaución.
 
-        classifier.py: Cruce entre detecciones visuales y base de conocimiento.
+---
 
-        models.py: Estructuras de datos (DetectionResult, WasteRule, ClassificationOutput).
+## Stack
 
-        display.py: Dibujado de cajas delimitadoras, etiquetas y avisos en OpenCV.
+* **Lenguaje:** Python 3.10+
+* **Visión Artificial:** OpenCV (`opencv-python`) para captura y renderizado en tiempo real.
+* **Inferencia Local:** ONNX Runtime (`onnxruntime`) para ejecutar modelos YOLOv8/MobileNet en CPU sin depender de GPU ni CUDA.
+* **Procesamiento Numérico:** NumPy para manipulación matricial de fotogramas.
+* **Base de Conocimiento:** JSON estructurado (`data/waste_rules.json`) desacoplado de la lógica de visión.
+* **Pruebas:** `pytest` para verificación unitaria de las reglas de negocio.
 
-        data/
+---
 
-            waste_rules.json: Mapeo de clases, sinónimos, canecas y normatividad.
+## Estructura del Proyecto
 
-        models_weights/
+* **`/chavitobins`**
+* **`app.py`**: Coordinador del flujo principal y bucle de la cámara.
+* **`camera.py`**: Inicialización, lectura y liberación de la cámara web.
+* **`vision.py`**: Carga del modelo (YOLOv8 / ONNX) e inferencia visual.
+* **`preprocessing.py`**: Redimensionamiento, normalización y adaptaciones para el modelo.
+* **`knowledge_base.py`**: Carga, indexación y validación del motor de reglas.
+* **`classifier.py`**: Cruce entre detecciones visuales y base de conocimiento.
+* **`models.py`**: Estructuras de datos (`DetectionResult`, `WasteRule`, `ClassificationOutput`).
+* **`display.py`**: Dibujado de cajas delimitadoras, etiquetas y avisos en OpenCV.
+* **`data/`**
+* **`waste_rules.json`**: Mapeo de clases, sinónimos, canecas y normatividad.
 
-            yolov8n_waste.onnx: Pesos del modelo local (fuera del control de versiones).
 
-        tests/
+* **`models_weights/`**
+* **`yolov8n_waste.onnx`**: Pesos del modelo local (fuera del control de versiones).
 
-            test_rules.py: Pruebas unitarias para el motor de reglas.
 
-            test_vision.py: Pruebas de inferencia con imágenes estáticas.
+* **`tests/`**
+* **`test_rules.py`**: Pruebas unitarias para el motor de reglas.
+* **`test_vision.py`**: Pruebas de inferencia con imágenes estáticas.
 
-        README.md: Documentación principal del proyecto.
 
-Contrato de Datos (Contrato de Detección)
+* **`README.md`**: Documentación principal del proyecto.
+
+
+
+---
+
+## Contrato de Datos (Contrato de Detección)
 
 Cada iteración entre el módulo de visión y el clasificador genera una estructura estandarizada:
-JSON
 
+```json
 {
   "nombre_clase": "cascara_banano",
   "confianza": 0.92,
@@ -118,56 +145,80 @@ JSON
   "advertencias": []
 }
 
-Requisitos y Configuración Local
-Prerrequisitos
+```
 
-    Python 3.10+
+---
 
-    Cámara web integrada o USB (o un directorio con imágenes estáticas para pruebas).
+## Requisitos y Configuración Local
 
-1. Clonar el repositorio
-Bash
+### Prerrequisitos
 
-git clone https://github.com/nekkro/chavitobins.git
+* **Python 3.10+**
+* **Cámara web integrada o USB** (o un directorio con imágenes estáticas para pruebas).
+
+### 1. Clonar el repositorio
+
+```bash
+git clone [https://github.com/nekkro/chavitobins.git](https://github.com/nekkro/chavitobins.git)
 cd chavitobins
 
-2. Crear un entorno virtual e instalar dependencias
-Bash
+```
 
+### 2. Crear un entorno virtual e instalar dependencias
+
+```bash
 python -m venv venv
 source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install opencv-python onnxruntime numpy pytest
 
-3. Descarga de Pesos del Modelo Local
+```
 
-Descarga los pesos localmente en la carpeta models_weights/ antes de ejecutar la aplicación:
-Bash
+### 3. Descarga de Pesos del Modelo Local
 
+Descarga los pesos localmente en la carpeta **`models_weights/`** antes de ejecutar la aplicación:
+
+```bash
 mkdir -p models_weights
 # Descargar el modelo en formato ONNX / PyTorch localmente
-Ejecución del Sistema
-Modo Tiempo Real (Cámara Web)
-Bash
 
+```
+
+---
+
+## Ejecución del Sistema
+
+### Modo Tiempo Real (Cámara Web)
+
+```bash
 python app.py
 
-Para salir de la aplicación, presiona la tecla q en la ventana de la cámara.
-Modo de Prueba con Imágenes Estáticas
-Bash
+```
 
+*Para salir de la aplicación, presiona la tecla `q` en la ventana de la cámara.*
+
+### Modo de Prueba con Imágenes Estáticas
+
+```bash
 python app.py --image tests/samples/test_apple.jpg
 
-Ejecución de Pruebas Automatizadas
+```
 
-El proyecto incluye suites de prueba con pytest para verificar la estabilidad de las reglas de clasificación sin necesidad de encender la cámara:
-Bash
+---
 
+## Pruebas
+
+Antes de ejecutar la aplicación con la cámara encendida, ejecuta la suite de pruebas para verificar el motor de reglas:
+
+```bash
 pytest tests/
 
-Limitaciones Conocidas
+```
 
-    Variaciones de Iluminación: Rendimiento dependiente de la intensidad lumínica ambiental sobre el objeto.
+Prueba la preservación de reglas de negocio, resolución de ambigüedades y comportamientos ante objetos desconocidos sin sobrecarga de hardware.
 
-    Residuos Ocultos o Compuestos: Empaques multilaminados (ej. empaques metalizados de snacks) son redirigidos a la caneca negra debido a su baja reciclabilidad.
+---
 
-    Hardware sin GPU: En equipos sin aceleración gráfica, la inferencia se ajusta reduciendo la frecuencia de fotogramas procesados (omisión controlada de fotogramas) para preservar un tiempo de respuesta ágil en la interfaz.
+## Limitaciones Conocidas
+
+1. **Variaciones de Iluminación:** Rendimiento dependiente de la intensidad lumínica ambiental sobre el objeto.
+2. **Residuos Ocultos o Compuestos:** Empaques multilaminados (ej. empaques metalizados de snacks) son redirigidos a la caneca negra debido a su baja reciclabilidad.
