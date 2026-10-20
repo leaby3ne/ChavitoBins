@@ -1,8 +1,8 @@
-# ChavitoBins ♻️
+# ChavitoBins 
+
 ## Sistema Local de Reconocimiento y Clasificación Visual de Residuos
 
 **Estado:** Planificación y diseño técnico  
-**Versión del documento:** 0.1.0  
 **Fecha de planificación:** Octubre de 2026  
 **Desarrollador:** Nekkro  
 **Lenguaje principal:** Python 3.10+
