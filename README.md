@@ -67,7 +67,8 @@ Desarrollado por **Nekkro**. Un sistema de visión artificial y motor de reglas 
                         +-----------------------+
 ```
 
-##Organizacion Del Proyecto
+Organización del Proyecto
+Plaintext
 
 /chavitobins
 ├── app.py                   # Coordinador del flujo principal y loop de la cámara
@@ -87,26 +88,22 @@ Desarrollado por **Nekkro**. Un sistema de visión artificial y motor de reglas 
 │   └── test_vision.py       # Pruebas de inferencia con imágenes estáticas
 └── README.md
 
-
-##Contrato de Datos (Contrato de Detección)
+Contrato de Datos (Contrato de Detección)
 
 Cada iteración entre el módulo de visión y el clasificador genera una estructura estandarizada:
-
+JSON
 
 {
-  "nombre_clase": "cascara_banano",
-  "confianza": 0.92,
-  "caja_delimitadora": [120, 80, 340, 420],
-  "regla_aplicada": "REGLA_ORG_001",
-  "estado": "CLASIFICADO",
-  "categoria_recomendada": "Verde",
-  "advertencias": []
+  "class_name": "banana_peel",
+  "confidence": 0.92,
+  "bbox": [120, 80, 340, 420],
+  "rule_applied": "RULE_ORG_001",
+  "status": "CLASIFICADO",
+  "recommended_category": "Verde",
+  "warnings": []
 }
 
-
-
-##Requisitos y Configuración Local
-
+Requisitos y Configuración Local
 Prerrequisitos
 
     Python 3.10+
@@ -118,7 +115,6 @@ Bash
 
 git clone [https://github.com/nekkro/chavitobins.git](https://github.com/nekkro/chavitobins.git)
 cd chavitobins
-
 
 2. Crear un entorno virtual e instalar dependencias
 Bash
