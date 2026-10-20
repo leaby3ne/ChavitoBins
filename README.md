@@ -402,25 +402,6 @@ El trabajo se organizará por etapas para reducir riesgos y priorizar el funcion
 6. **Pruebas y documentación:** verificar el flujo completo, corregir errores y preparar la demostración.
 
 Se priorizará un sistema pequeño que funcione de principio a fin antes de ampliar la cantidad de clases o incorporar funcionalidades adicionales.
-
-## 17. Estado actual del proyecto
-
-En esta etapa, ChavitoBins se encuentra en planificación y diseño técnico.
-
-- [x] Definición preliminar del objetivo.
-- [x] Propuesta de arquitectura modular.
-- [x] Selección preliminar de tecnologías.
-- [x] Definición inicial del alcance del MVP.
-- [ ] Selección y validación del modelo.
-- [ ] Creación de la estructura de directorios.
-- [ ] Implementación de la captura de cámara.
-- [ ] Integración de la inferencia local.
-- [ ] Implementación del motor de clasificación.
-- [ ] Integración de la interfaz visual.
-- [ ] Ejecución de las pruebas de aceptación.
-
-Las casillas describen el estado previsto al redactar esta especificación y deberán actualizarse a medida que avance el desarrollo.
-
 ---
 
 ## 18. Resultado esperado
