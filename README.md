@@ -227,11 +227,11 @@ Cada regla podrá contener campos como los siguientes:
 | Campo | Descripción |
 |---|---|
 | `id` | Identificador único de la regla. |
-| `clases` | Clases de objetos a las que puede aplicarse. |
-| `categoria` | Categoría de disposición recomendada. |
-| `recomendacion` | Mensaje que se mostrará al usuario. |
-| `advertencias` | Precauciones o restricciones relevantes. |
-| `condiciones` | Condiciones necesarias para aplicar la regla. |
+| `classes` | Clases de objetos a las que puede aplicarse. |
+| `category` | Categoría de disposición recomendada. |
+| `recommendation` | Mensaje que se mostrará al usuario. |
+| `warnings` | Precauciones o restricciones relevantes. |
+| `conditions` | Condiciones necesarias para aplicar la regla. |
 
 Esta estructura es conceptual y podrá ajustarse durante la implementación para mantener un formato JSON sencillo y validable.
 
