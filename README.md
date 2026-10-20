@@ -68,25 +68,40 @@ Desarrollado por **Nekkro**. Un sistema de visión artificial y motor de reglas 
 ```
 
 Organización del Proyecto
-Plaintext
 
-/chavitobins
-├── app.py                   # Coordinador del flujo principal y loop de la cámara
-├── camera.py                # Inicialización, lectura y liberación de la cámara web
-├── vision.py                # Carga del modelo (YOLOv8/ONNX) e inferencia visual
-├── preprocessing.py         # Resizing, normalización y adaptaciones para el modelo
-├── knowledge_base.py        # Carga, indexación y validación del motor de reglas
-├── classifier.py            # Cruce entre detecciones visuales y base de conocimiento
-├── models.py                # Data classes (DetectionResult, WasteRule, ClassificationOutput)
-├── display.py               # Dibujado de bounding boxes, etiquetas y avisos en OpenCV
-├── data/
-│   └── waste_rules.json     # Mapeo de clases, sinónimos, canecas y normatividad
-├── models_weights/
-│   └── yolov8n_waste.onnx   # Pesos del modelo local (Fuera del control de versiones)
-├── tests/
-│   ├── test_rules.py        # Pruebas unitarias para el motor de reglas
-│   └── test_vision.py       # Pruebas de inferencia con imágenes estáticas
-└── README.md
+    /chavitobins
+
+        app.py: Coordinador del flujo principal y bucle de la cámara.
+
+        camera.py: Inicialización, lectura y liberación de la cámara web.
+
+        vision.py: Carga del modelo (YOLOv8 / ONNX) e inferencia visual.
+
+        preprocessing.py: Redimensionamiento, normalización y adaptaciones para el modelo.
+
+        knowledge_base.py: Carga, indexación y validación del motor de reglas.
+
+        classifier.py: Cruce entre detecciones visuales y base de conocimiento.
+
+        models.py: Estructuras de datos (DetectionResult, WasteRule, ClassificationOutput).
+
+        display.py: Dibujado de cajas delimitadoras, etiquetas y avisos en OpenCV.
+
+        data/
+
+            waste_rules.json: Mapeo de clases, sinónimos, canecas y normatividad.
+
+        models_weights/
+
+            yolov8n_waste.onnx: Pesos del modelo local (fuera del control de versiones).
+
+        tests/
+
+            test_rules.py: Pruebas unitarias para el motor de reglas.
+
+            test_vision.py: Pruebas de inferencia con imágenes estáticas.
+
+        README.md: Documentación principal del proyecto.
 
 Contrato de Datos (Contrato de Detección)
 
@@ -94,13 +109,13 @@ Cada iteración entre el módulo de visión y el clasificador genera una estruct
 JSON
 
 {
-  "class_name": "banana_peel",
-  "confidence": 0.92,
-  "bbox": [120, 80, 340, 420],
-  "rule_applied": "RULE_ORG_001",
-  "status": "CLASIFICADO",
-  "recommended_category": "Verde",
-  "warnings": []
+  "nombre_clase": "cascara_banano",
+  "confianza": 0.92,
+  "caja_delimitadora": [120, 80, 340, 420],
+  "regla_aplicada": "REGLA_ORG_001",
+  "estado": "CLASIFICADO",
+  "categoria_recomendada": "Verde",
+  "advertencias": []
 }
 
 Requisitos y Configuración Local
@@ -113,7 +128,7 @@ Prerrequisitos
 1. Clonar el repositorio
 Bash
 
-git clone [https://github.com/nekkro/chavitobins.git](https://github.com/nekkro/chavitobins.git)
+git clone https://github.com/nekkro/chavitobins.git
 cd chavitobins
 
 2. Crear un entorno virtual e instalar dependencias
@@ -130,7 +145,6 @@ Bash
 
 mkdir -p models_weights
 # Descargar el modelo en formato ONNX / PyTorch localmente
-
 Ejecución del Sistema
 Modo Tiempo Real (Cámara Web)
 Bash
@@ -156,4 +170,4 @@ Limitaciones Conocidas
 
     Residuos Ocultos o Compuestos: Empaques multilaminados (ej. empaques metalizados de snacks) son redirigidos a la caneca negra debido a su baja reciclabilidad.
 
-    Hardware sin GPU: En equipos sin aceleración gráfica, la inferencia se ajusta reduciendo la frecuencia de frames procesados (frame-skipping) para preservar un tiempo de respuesta ágil en la interfaz.
+    Hardware sin GPU: En equipos sin aceleración gráfica, la inferencia se ajusta reduciendo la frecuencia de fotogramas procesados (omisión controlada de fotogramas) para preservar un tiempo de respuesta ágil en la interfaz.
