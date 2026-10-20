@@ -404,7 +404,7 @@ El trabajo se organizará por etapas para reducir riesgos y priorizar el funcion
 Se priorizará un sistema pequeño que funcione de principio a fin antes de ampliar la cantidad de clases o incorporar funcionalidades adicionales.
 ---
 
-## 18. Resultado esperado
+## 17. Resultado esperado
 
 ChavitoBins busca demostrar que un modelo de visión artificial ejecutado localmente, combinado con un motor de reglas explícitas, puede ofrecer orientación práctica para la separación de un conjunto limitado de residuos.
 
