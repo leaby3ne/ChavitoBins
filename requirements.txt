@@ -1,0 +1,4 @@
+numpy
+onnxruntime>=1.24
+pillow
+pytest
