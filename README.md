@@ -1,413 +1,366 @@
-# ChavitoBins 
+# ChavitoBins
 
-## Sistema Local de Reconocimiento y Clasificación Visual de Residuos
+Sistema local de reconocimiento visual de residuos que orienta al usuario sobre
+en qué caneca depositarlos, según el código de colores de la **Resolución 2184
+de 2019** del Ministerio de Ambiente de Colombia (verde: orgánicos
+aprovechables, blanca: aprovechables, negra: no aprovechables).
 
-**Estado:** Planificación y diseño técnico  
-**Fecha de planificación:** Octubre de 2026  
-**Desarrollador:** Nekkro  
-**Lenguaje principal:** Python 3.10+
+Una cámara web (o una imagen) alimenta un modelo de visión artificial que se
+ejecuta **en el propio equipo**; la decisión de en qué caneca va cada objeto la
+toma un motor de **reglas explícitas** (archivo JSON), no una IA. El sistema
+**no usa APIs externas, no usa LLMs y no envía imágenes a ningún servidor**.
 
----
+> **Alcance.** ChavitoBins es un prototipo académico (MVP). Reconoce 6 materiales
+> y no pretende identificar cualquier residuo. Ver [Limitaciones](#limitaciones).
 
-## 1. Descripción del proyecto
+## Contenido
 
-ChavitoBins es un sistema de reconocimiento visual de residuos que busca facilitar su correcta separación mediante una cámara y un modelo de inteligencia artificial ejecutado localmente.
+1. [Cómo funciona](#cómo-funciona)
+2. [Estado real de la implementación](#estado-real-de-la-implementación)
+3. [Arquitectura](#arquitectura)
+4. [Estructura del proyecto](#estructura-del-proyecto)
+5. [Tecnologías y requisitos](#tecnologías-y-requisitos)
+6. [Instalación](#instalación)
+7. [Ejecución y uso](#ejecución-y-uso)
+8. [Reglas y código de colores](#reglas-y-código-de-colores)
+9. [Funcionamiento sin conexión](#funcionamiento-sin-conexión)
+10. [Pruebas](#pruebas)
+11. [Personalización](#personalización)
+12. [Escalabilidad y trabajo futuro](#escalabilidad-y-trabajo-futuro)
+13. [Limitaciones](#limitaciones)
+14. [Modelos, licencias y fuentes](#modelos-licencias-y-fuentes)
+15. [Guion sugerido para la demostración](#guion-sugerido-para-la-demostración)
 
-El sistema analizará imágenes capturadas en tiempo real, detectará objetos mediante un modelo de visión artificial preentrenado y utilizará un motor de reglas deterministas para generar recomendaciones sobre su disposición.
+## Cómo funciona
 
-La aplicación estará diseñada para ejecutarse en el equipo del usuario, sin depender de APIs externas de inteligencia artificial, modelos de lenguaje (LLMs) ni servicios en la nube durante su funcionamiento normal.
-
-La arquitectura separa el reconocimiento visual de la lógica de clasificación, lo que permitirá actualizar las reglas y recomendaciones sin modificar directamente el funcionamiento interno del modelo.
-
-> **Nota sobre el estado:** ChavitoBins se encuentra en fase de planificación. La arquitectura, las tecnologías y la estructura de archivos descritas en este documento representan el diseño propuesto, no funcionalidades ya implementadas.
-
-## 2. Problema que busca resolver
-
-La separación de residuos puede resultar confusa cuando las personas desconocen la categoría a la que pertenece un objeto o no saben cómo disponer de él correctamente.
-
-ChavitoBins pretende ofrecer orientación visual inmediata, mostrando el objeto detectado, el nivel de confianza de la predicción y una recomendación de disposición basada en reglas definidas.
-
-El sistema será una herramienta de apoyo educativo. No reemplazará las indicaciones oficiales para la gestión de residuos ni garantizará la identificación de cualquier material.
-
-## 3. Objetivos
-
-### 3.1. Objetivo general
-
-Desarrollar un prototipo de reconocimiento visual que detecte un conjunto limitado de objetos mediante una cámara web y genere recomendaciones de separación de residuos utilizando un modelo de visión artificial local y un motor de reglas en Python.
-
-### 3.2. Objetivos específicos
-
-- Capturar imágenes en tiempo real mediante una cámara web.
-- Ejecutar localmente un modelo de visión artificial preentrenado.
-- Detectar objetos pertenecientes a un conjunto de clases previamente definido.
-- Procesar las predicciones y sus niveles de confianza.
-- Consultar una base de conocimiento de reglas almacenadas en JSON.
-- Generar recomendaciones a partir de las detecciones y las reglas aplicables.
-- Mostrar los resultados mediante una interfaz visual sencilla.
-- Gestionar objetos desconocidos y predicciones de baja confianza.
-- Verificar la lógica de clasificación mediante pruebas automatizadas.
-- Documentar los requisitos, las limitaciones y los resultados de las pruebas.
-
-## 4. Alcance del MVP
-
-El producto mínimo viable (MVP) priorizará un flujo funcional de principio a fin sobre la cantidad de objetos reconocidos o la complejidad de la interfaz.
-
-### 4.1. Funcionalidades incluidas
-
-1. Captura de imágenes mediante cámara web.
-2. Procesamiento local de los fotogramas.
-3. Detección de un conjunto reducido de objetos compatibles con el modelo seleccionado.
-4. Obtención de etiquetas, confianza y coordenadas de las detecciones, cuando el modelo las proporcione.
-5. Clasificación mediante reglas deterministas.
-6. Consulta de reglas desde un archivo JSON.
-7. Visualización de las detecciones y las recomendaciones.
-8. Manejo de objetos desconocidos o predicciones inciertas.
-9. Modo opcional de procesamiento de imágenes estáticas para facilitar las pruebas.
-10. Pruebas unitarias del motor de reglas.
-11. Ejecución sin conexión a internet una vez instaladas las dependencias y disponibles los archivos necesarios.
-
-### 4.2. Funcionalidades fuera del alcance inicial
-
-- Entrenamiento de un modelo desde cero.
-- Reconocimiento garantizado de todos los residuos.
-- Identificación de la composición química de los materiales.
-- Determinación fiable de contaminación a partir de una imagen únicamente.
-- Clasificación exhaustiva de residuos peligrosos, hospitalarios o industriales.
-- Aplicación móvil o interfaz web.
-- Registro de usuarios o almacenamiento remoto.
-- Integración con APIs externas de IA o LLMs.
-- Automatización física de contenedores.
-- Sistemas de seguimiento, estadísticas o análisis en la nube.
-
-Estas funcionalidades podrán considerarse en futuras versiones si los resultados del MVP justifican su desarrollo.
-
-## 5. Arquitectura del sistema
-
-ChavitoBins utilizará una arquitectura modular que separa la captura de imágenes, la inferencia del modelo, la toma de decisiones y la presentación de resultados.
-
-### 5.1. Flujo general
-
-```text
-             ┌───────────────────┐
-             │    Cámara web     │
-             └─────────┬─────────┘
-                       │
-                       ▼
-             ┌───────────────────┐
-             │ Captura de imagen  │
-             │      OpenCV       │
-             └─────────┬─────────┘
-                       │
-                       ▼
-             ┌───────────────────┐
-             │  Preprocesamiento │
-             │     de imagen     │
-             └─────────┬─────────┘
-                       │
-                       ▼
-             ┌───────────────────┐
-             │ Modelo de visión  │
-             │   ejecutado local │
-             └─────────┬─────────┘
-                       │
-                       ▼
-             ┌───────────────────┐
-             │ Procesamiento de  │
-             │    detecciones    │
-             └─────────┬─────────┘
-                       │
-                       ▼
-             ┌───────────────────┐
-             │ Motor de reglas   │◄──── Base de conocimiento
-             │     Python        │      waste_rules.json
-             └─────────┬─────────┘
-                       │
-                       ▼
-             ┌───────────────────┐
-             │ Recomendaciones e │
-             │ interfaz visual   │
-             └───────────────────┘
+```
+ Captura          Visión              Filtro y complemento  Clasificador        Interfaz
+ (camera.py) ──►  (vision_yolo.py) ──► COCO (person_filter) ──► (classifier.py) ──► (gui.py / HUD)
+ Webcam o         YOLO11n de          YOLOX-nano (COCO):     Reglas JSON         Cajas + panel
+ imagen           residuos            descarta personas y    (knowledge_base)    con la caneca,
+                  (6 materiales)      añade botellas,        + preguntas         advertencias y
+                                      frutas y verduras      de verificación     preguntas sí/no
+                                      ▲                                          ▲
+                                      └── stabilizer.py: la recomendación aparece tras 5
+                                          fotogramas seguidos y no se repite mientras el
+                                          objeto siga en escena
 ```
 
-### 5.2. Componentes principales
+1. **Captura.** `Camera` abre la webcam con OpenCV (o se carga una imagen).
+2. **Visión.** El modelo de residuos (`waste_yolo11n.onnx`, ONNX Runtime en CPU)
+   devuelve cajas, material (`biodegradable`, `cardboard`, `glass`, `metal`,
+   `paper`, `plastic`) y confianza.
+3. **Filtro y complemento COCO.** El modelo de residuos siempre elige un material,
+   incluso frente a una persona: un segundo detector (YOLOX-nano con clases COCO)
+   busca personas y se descartan las detecciones de residuos que se solapan con
+   una (IoU > 0.3) o que cubren casi toda la persona. Además, el modelo de
+   residuos falla con algunos objetos cotidianos (una botella transparente en la
+   mano salió con 0.24 de confianza), mientras que COCO los detecta con
+   seguridad: por eso también se aceptan las clases COCO `bottle`, `banana`,
+   `apple`, `orange`, `broccoli` y `carrot`. Si el modelo de residuos ya
+   reconoce el mismo objeto con confianza suficiente, se conserva su detección.
+4. **Clasificación.** `WasteClassifier` busca la regla del material en
+   `data/waste_rules.json`. Con confianza insuficiente o sin regla, **no da
+   categoría**: informa de la incertidumbre.
+5. **Recipiente negro.** La cámara no puede ver si un plástico es un empaque
+   metalizado de snacks o está sucio con comida. Para esos casos las reglas
+   incluyen una **pregunta de sí/no**; con "Sí" la recomendación pasa al
+   recipiente negro.
+6. **Interfaz.** Ventana Tkinter con la imagen y un panel HUD al costado (no tapa
+   el encuadre ni las cajas) con la franja del color de la caneca.
 
-| Componente | Responsabilidad |
+## Estado real de la implementación
+
+| Componente | Estado | Verificación |
+|---|---|---|
+| Detección con modelo de residuos (imagen y cámara) | Implementado | Probado con imágenes reales; cámara validada con fotogramas simulados |
+| Filtro híbrido de personas y complemento COCO (botella, frutas, verduras) | Implementado | Probado con imágenes y pruebas automáticas; **falta probarlo con la webcam** |
+| Reglas JSON validadas + clasificador | Implementado | Pruebas automáticas |
+| Recipiente negro (por pregunta de verificación) | Implementado | Pruebas automáticas e interfaz; **falta probarlo con empaques reales** |
+| Estabilización (5 fotogramas) | Implementado | Pruebas automáticas e interfaz con cámara simulada |
+| Interfaz gráfica con HUD | Implementado | Verificada en Linux con servidor gráfico virtual y cámara simulada; **falta verla con la webcam y en Windows** |
+| Funcionamiento sin conexión | Implementado | Verificado ejecutando la app sin acceso a red |
+| Pruebas automáticas | 135 pruebas | Pasan en el entorno de desarrollo (Linux, Python 3.12). Con la instalación por defecto se ejecutan 132 y se omiten 3 que usan YOLOX-s (se activan con `--con-yolox-s`) |
+
+Hechos verificados en el equipo del desarrollador en etapas anteriores: la
+webcam funciona con OpenCV en Windows (backend DSHOW, 640x480, ~30 fps) y la
+versión inicial del proyecto pasó sus pruebas en Python 3.14.7 (Linux) y 3.12
+(Windows). La **versión actual** debe validarse en el equipo de la
+demostración siguiendo [`docs/test-plan.md`](docs/test-plan.md).
+
+## Arquitectura
+
+| Módulo | Responsabilidad |
 |---|---|
-| Captura de cámara | Obtener fotogramas mediante OpenCV. |
-| Preprocesamiento | Ajustar las imágenes al formato requerido por el modelo. |
-| Visión artificial | Ejecutar el modelo local y procesar sus salidas. |
-| Motor de clasificación | Aplicar reglas de decisión a las detecciones. |
-| Base de conocimiento | Almacenar y consultar las categorías y recomendaciones. |
-| Interfaz visual | Mostrar el objeto detectado, la confianza y los mensajes correspondientes. |
-| Aplicación principal | Coordinar los componentes y gestionar el ciclo de ejecución. |
+| `app.py` | Punto de entrada: arranca la interfaz o analiza una imagen por terminal; gestiona errores esperados |
+| `src/camera.py` | Apertura de la webcam, lectura de fotogramas y liberación garantizada |
+| `src/preprocessing.py` | Carga de imágenes y *letterbox* (escalado con relleno) para el modelo |
+| `src/vision_yolo.py` | Detector para modelos Ultralytics (residuos): lee las etiquetas del propio ONNX y decodifica la salida |
+| `src/vision.py` | Detector YOLOX (COCO), tipos comunes (`Detection`) y supresión de duplicados (NMS) |
+| `src/model_loader.py` | Elige el detector según el contenido del ONNX y arma la cascada residuos + filtro |
+| `src/person_filter.py` | Detector híbrido: descarta residuos que coinciden con una persona y añade botellas, frutas y verduras de COCO |
+| `src/knowledge_base.py` | Carga y validación del JSON de reglas (errores claros) |
+| `src/classifier.py` | Aplica las reglas, gestiona la incertidumbre y las preguntas de verificación |
+| `src/stabilizer.py` | Decide cuándo una recomendación es estable (5 fotogramas) |
+| `src/display.py` | Presentación en texto (terminal) |
+| `src/gui.py` | Interfaz Tkinter: cajas, panel HUD, preguntas y pop-up opcional |
+| `data/waste_rules.json` | Reglas y mensajes en español |
+| `scripts/` | Descarga de modelos, diagnóstico de cámara, vista previa, benchmark y evaluación |
 
-### 5.3. Principios de diseño
+Decisiones de diseño: la IA solo reconoce; las reglas son deterministas y
+editables sin tocar código; la lógica de negocio no depende de la interfaz; los
+errores esperados (cámara, modelo, reglas, imagen) se informan con mensajes
+claros en vez de ocultarse.
 
-- **Modularidad:** cada módulo tendrá una responsabilidad definida.
-- **Procesamiento local:** las imágenes y predicciones se procesarán en el equipo del usuario.
-- **Separación de responsabilidades:** la IA detectará objetos; las reglas determinarán las recomendaciones.
-- **Trazabilidad:** las recomendaciones podrán relacionarse con las detecciones y reglas que las originaron.
-- **Tolerancia a errores:** una predicción incierta no se convertirá automáticamente en una clasificación definitiva.
-- **Configurabilidad:** las reglas podrán modificarse desde JSON.
-- **Alcance verificable:** solo se anunciarán como compatibles las clases probadas.
+## Estructura del proyecto
 
-## 6. Tecnologías previstas
-
-| Tecnología | Utilidad |
-|---|---|
-| Python 3.10+ | Lenguaje principal de desarrollo. |
-| OpenCV | Captura de cámara y visualización de resultados. |
-| ONNX Runtime | Ejecución local del modelo si se selecciona un modelo compatible con ONNX. |
-| NumPy | Operaciones y transformación de matrices de imágenes. |
-| JSON | Almacenamiento de reglas y recomendaciones. |
-| pytest | Pruebas automatizadas. |
-| Git | Control de versiones del código fuente. |
-
-Las versiones concretas de las dependencias se definirán y verificarán durante la implementación, para después registrarlas en `requirements.txt`.
-
-La elección de ONNX Runtime depende de que el modelo seleccionado sea compatible con ese formato. No se presupone que cualquier modelo de visión pueda ejecutarse directamente sin adaptar su entrada, sus salidas o su postprocesamiento.
-
-## 7. Inteligencia artificial y reconocimiento visual
-
-### 7.1. Enfoque seleccionado
-
-El MVP utilizará un modelo de visión artificial preentrenado que se ejecute localmente. Esta estrategia busca reducir el tiempo de desarrollo y evitar la necesidad de recopilar y etiquetar un conjunto de datos propio.
-
-La selección del modelo deberá priorizar la compatibilidad con las clases de objetos necesarias para la demostración, la capacidad de ejecutarse en el hardware disponible y la posibilidad de utilizarlo conforme a su licencia.
-
-### 7.2. Requisitos del modelo
-
-El modelo seleccionado deberá cumplir los siguientes requisitos:
-
-- Ejecutarse sin solicitar servicios externos durante la inferencia.
-- Reconocer objetos relevantes para el alcance definido.
-- Permitir interpretar las clases y los resultados que genera.
-- Proporcionar información de confianza o un mecanismo equivalente, si está disponible.
-- Tener una licencia compatible con el uso previsto.
-- Ser compatible con el entorno de ejecución local.
-- Disponer de información suficiente para implementar el preprocesamiento y el postprocesamiento.
-
-### 7.3. Validación previa a la integración
-
-Antes de integrarlo en la aplicación se verificará:
-
-1. La existencia y procedencia del modelo.
-2. Las clases que realmente puede reconocer.
-3. El formato y las dimensiones de entrada.
-4. La estructura de las salidas.
-5. El procedimiento de postprocesamiento requerido.
-6. La ejecución con imágenes de prueba.
-7. El rendimiento en el equipo disponible.
-8. La licencia y las condiciones de distribución.
-
-La selección definitiva del modelo permanece pendiente de esta validación.
-
-## 8. Motor de clasificación y base de conocimiento
-
-El motor de clasificación será desarrollado en Python y utilizará reglas explícitas almacenadas en `data/waste_rules.json`.
-
-Su responsabilidad será relacionar las detecciones del modelo con las categorías y recomendaciones definidas para el proyecto.
-
-La clasificación no dependerá exclusivamente de la etiqueta visual. También se tendrán en cuenta las limitaciones de la detección y la información que realmente pueda obtenerse de la imagen.
-
-### 8.1. Responsabilidades del motor de reglas
-
-- Recibir las detecciones procesadas por el módulo de visión.
-- Verificar si la detección cumple las condiciones mínimas para evaluarse.
-- Consultar las reglas correspondientes.
-- Determinar si existe una recomendación aplicable.
-- Identificar situaciones que requieren una advertencia.
-- Devolver un resultado estructurado a la interfaz visual.
-- Informar cuando no exista una regla válida para el objeto detectado.
-
-### 8.2. Estructura conceptual de las reglas
-
-Cada regla podrá contener campos como los siguientes:
-
-| Campo | Descripción |
-|---|---|
-| `id` | Identificador único de la regla. |
-| `classes` | Clases de objetos a las que puede aplicarse. |
-| `category` | Categoría de disposición recomendada. |
-| `recommendation` | Mensaje que se mostrará al usuario. |
-| `warnings` | Precauciones o restricciones relevantes. |
-| `conditions` | Condiciones necesarias para aplicar la regla. |
-
-Esta estructura es conceptual y podrá ajustarse durante la implementación para mantener un formato JSON sencillo y validable.
-
-### 8.3. Separación entre reconocimiento y disposición
-
-Reconocer un objeto no siempre permite determinar cómo debe desecharse.
-
-Por ejemplo, identificar visualmente una botella no permite saber con certeza si contiene sustancias peligrosas o si está contaminada. Por ello, el sistema no deberá inferir propiedades que el modelo no pueda observar.
-
-Cuando falte información, mostrará una recomendación de verificación manual en lugar de presentar una clasificación definitiva.
-
-## 9. Esquema de separación de residuos en Colombia
-
-Las recomendaciones deberán distinguir entre el código general de separación de residuos y las situaciones que requieren un tratamiento especial.
-
-Como referencia general para la separación de residuos en Colombia se contempla:
-
-- **Blanco:** residuos aprovechables que cumplan las condiciones correspondientes.
-- **Verde:** residuos orgánicos aprovechables.
-- **Negro:** residuos no aprovechables.
-
-La aplicación no deberá tratar el recipiente rojo como una categoría general de todos los residuos peligrosos domésticos. Cualquier manejo especial deberá delimitarse según el tipo de residuo y las disposiciones aplicables.
-
-La clasificación final dependerá de las reglas que se definan y verifiquen para el MVP. El sistema no afirmará que puede reconocer automáticamente todas las condiciones necesarias para determinar la disposición correcta de cualquier objeto.
-
-## 10. Manejo de confianza e incertidumbre
-
-La confianza generada por el modelo será utilizada como una señal de apoyo para decidir si una detección puede procesarse. No se interpretará como garantía de exactitud.
-
-### Comportamiento previsto
-
-- **Detección aceptable:** consultar las reglas aplicables y mostrar la recomendación correspondiente.
-- **Confianza insuficiente:** indicar que el objeto no pudo identificarse con suficiente seguridad.
-- **Objeto sin regla asociada:** informar que no existe una recomendación automática disponible.
-- **Posible residuo peligroso:** evitar recomendaciones definitivas que no estén respaldadas por una regla validada.
-- **Error de cámara o modelo:** mostrar un mensaje comprensible y finalizar o permitir reintentar de forma controlada.
-
-El umbral de confianza se establecerá durante las pruebas con el modelo seleccionado.
-
-## 11. Estructura de directorios prevista
-
-La siguiente estructura representa la organización propuesta para el repositorio:
-
-```text
-chavitobins/
+```
+ChavitoBins/
 ├── app.py
 ├── requirements.txt
-├── README.md
-├── .gitignore
-│
-├── src/
-│   ├── camera.py
-│   ├── preprocessing.py
-│   ├── vision.py
-│   ├── classifier.py
-│   ├── knowledge_base.py
-│   └── display.py
-│
 ├── data/
-│   └── waste_rules.json
-│
+│   ├── waste_rules.json          # reglas del modelo de residuos (las que se usan)
+│   └── waste_rules_coco.json     # reglas del modelo COCO anterior (alternativa)
 ├── models/
-│   └── README.md
-│
-└── tests/
-    ├── test_rules.py
-    └── test_vision.py
+│   ├── README.md                 # procedencia, etiquetas y licencias de los modelos
+│   └── *.onnx                    # se descargan con scripts.download_model (no están en Git)
+├── src/                          # código de la aplicación (ver tabla de módulos)
+├── scripts/
+│   ├── download_model.py         # descarga y verifica (SHA-256) los modelos y las imágenes de prueba
+│   ├── check_camera.py           # diagnostica qué índice y backend de cámara funcionan
+│   ├── live_preview.py           # vista previa en vivo con ms por fotograma
+│   ├── benchmark.py              # latencia y FPS con/sin filtro de personas
+│   ├── evaluate.py               # precisión sobre carpetas de imágenes etiquetadas
+│   └── validate_model.py         # prueba un modelo sobre una imagen
+├── tests/                        # pruebas automáticas (pytest)
+└── docs/
+    └── test-plan.md              # plan de pruebas y matriz de casos
 ```
 
-La estructura podrá modificarse cuando se conozcan las necesidades reales de integración. No será necesario crear módulos vacíos que no aporten valor al MVP.
+## Tecnologías y requisitos
 
-### Responsabilidad de los archivos
+- **Python** 3.12 o superior (probado con 3.12; la versión inicial también con 3.14.7).
+- **ONNX Runtime** (CPU) para ejecutar los modelos; **NumPy**; **Pillow**.
+- **OpenCV** (`opencv-python`) solo para la webcam.
+- **Tkinter** para la interfaz: viene con Python en Windows. En Linux:
+  `sudo apt install python3-tk` (Debian/Ubuntu) o `sudo pacman -S tk` (Arch).
+- **pytest** para las pruebas.
+- Una webcam, si se quiere el modo en vivo. No requiere GPU.
+- Linux o Windows. Internet solo para la instalación inicial.
 
-| Archivo | Función prevista |
+## Instalación
+
+Linux / macOS:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate          # en fish: source .venv/bin/activate.fish
+pip install -r requirements.txt
+python -m scripts.download_model   # descarga los modelos (con comprobación SHA-256) y las imágenes de prueba
+python -m pytest -q                # comprueba la instalación
+```
+
+Windows (PowerShell o Git Bash; se llama al Python del entorno sin activarlo):
+
+```powershell
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m scripts.download_model
+.venv\Scripts\python.exe -m pytest -q
+```
+
+`download_model` descarga el modelo de residuos y el detector de personas
+(YOLOX-nano). Opciones: `--con-yolox-s` (alternativa más precisa y lenta) y
+`--solo-residuos` (sin filtro de personas).
+
+## Ejecución y uso
+
+```bash
+python app.py                                   # interfaz gráfica
+python app.py --image samples/apple.jpg         # una imagen, resultado en la terminal
+python app.py --image samples/apple.jpg --detalle   # con las detecciones originales del modelo
+python app.py --camara 1                        # otro índice de cámara
+python app.py --sin-filtro-personas             # desactiva el filtro y el complemento (para comparar)
+python app.py --sin-complemento-coco            # solo filtra personas, sin aceptar botellas ni frutas de COCO
+python app.py --min-confidence 0.6              # confianza mínima para recomendar
+```
+
+(En Windows, sustituye `python` por `.venv\Scripts\python.exe`.)
+
+**Uso de la cámara.** Si no sabes qué índice o backend funciona, ejecuta
+`python -m scripts.check_camera`. En Windows revisa *Configuración → Privacidad y
+seguridad → Cámara* y cierra otras aplicaciones que la usen.
+
+**Interfaz.**
+- *Abrir imagen…* analiza una imagen; *Iniciar cámara* arranca el análisis en vivo.
+- Las **cajas** muestran el material en español y la confianza (verde: recomendado,
+  ámbar: por verificar, gris: confianza baja).
+- El **panel de la derecha (HUD)** muestra la franja del color de la caneca, qué se
+  detectó, el mensaje y las advertencias. En vivo, una recomendación aparece cuando
+  el mismo objeto se ve **5 fotogramas seguidos** y desaparece al retirarlo.
+- Si la cámara no puede decidir sola (plástico, metal o papel), el panel hace una
+  **pregunta de sí/no**, por ejemplo *¿Es un empaque de snack o papas fritas?*. Al
+  responder **Sí**, la franja cambia a **negro**.
+- *Ventana emergente* (opcional) abre además un pop-up por recomendación.
+
+**Herramientas.** `python -m scripts.live_preview` (ms por fotograma en vivo),
+`python -m scripts.benchmark` (latencia), `python -m scripts.evaluate CARPETA`
+(precisión). Ver [`docs/test-plan.md`](docs/test-plan.md).
+
+## Reglas y código de colores
+
+| Caneca | Residuos | Cómo lo decide ChavitoBins |
+|---|---|---|
+| Verde | Orgánicos aprovechables (restos de comida, cáscaras) | Material `biodegradable`; frutas y verduras detectadas por COCO |
+| Blanca | Aprovechables limpios y secos: plástico, vidrio, metales, multicapa, papel y cartón | Materiales `plastic`, `glass`, `metal`, `paper`, `cardboard` (vidrio y metal se muestran juntos como "vidrio o metal"; ver Limitaciones); botellas detectadas por COCO (con aviso de verificar) |
+| Negra | No aprovechables: papel higiénico, servilletas, papeles y cartones contaminados con comida, papeles metalizados, entre otros | **Solo por pregunta de verificación** (la cámara no puede verlo) |
+
+Fuente: Resolución 2184 de 2019 y comunicado del Ministerio de Ambiente
+(consultados en octubre de 2026). Dos matices: la norma nombra "papeles
+metalizados" y los empaques de snacks se tratan como tales (interpretación
+habitual, no literal); y "multicapa" figura entre los aprovechables, por lo que
+ante un empaque concreto la advertencia remite al servicio de aseo local. Los
+servicios municipales pueden tener indicaciones adicionales.
+
+Las reglas están en `data/waste_rules.json`. El archivo se **valida al cargar**:
+etiquetas mal escritas, categorías inexistentes, reglas duplicadas o
+incompletas producen un error que lista todos los problemas.
+
+## Funcionamiento sin conexión
+
+La instalación y la descarga de modelos requieren internet. Después, la
+ejecución normal es **totalmente local**: no hay APIs externas ni nube. Se
+verificó ejecutando la aplicación en un entorno sin acceso a red.
+
+## Pruebas
+
+```bash
+python -m pytest -q
+```
+
+135 pruebas de comportamiento (3 se omiten si no está YOLOX-s): reglas (casos normales y límite, JSON malformado,
+reglas incompletas, categorías sin correspondencia), clasificador (desconocido,
+confianza baja, preguntas de verificación), decodificación del modelo y
+coordenadas, filtro de personas (solapamiento, objeto sostenido, caché),
+estabilizador, cámara con dobles de prueba (sin hardware) y cierre de recursos.
+Algunas pruebas usan los modelos reales y se omiten si no están descargados. La
+interfaz se verificó aparte con un servidor gráfico virtual. El plan completo
+está en [`docs/test-plan.md`](docs/test-plan.md).
+
+## Personalización
+
+| Qué cambiar | Dónde |
 |---|---|
-| `app.py` | Punto de entrada y coordinación general. |
-| `src/camera.py` | Captura y gestión de la cámara. |
-| `src/preprocessing.py` | Preparación de imágenes para el modelo. |
-| `src/vision.py` | Inferencia y procesamiento de detecciones. |
-| `src/classifier.py` | Evaluación de reglas y generación de resultados. |
-| `src/knowledge_base.py` | Carga y consulta de las reglas JSON. |
-| `src/display.py` | Visualización de detecciones y recomendaciones. |
-| `data/waste_rules.json` | Base de conocimiento de clasificación. |
-| `models/` | Ubicación prevista para el modelo y su documentación. |
-| `tests/` | Pruebas automatizadas del sistema. |
+| Mensajes, advertencias, preguntas y nombres de canecas | `data/waste_rules.json` |
+| Colores de franja, cajas, tamaños y textos de botones | Constantes al inicio de `src/gui.py` |
+| Cuántos fotogramas hacen falta para mostrar una recomendación | `confirm_frames` / `release_frames` en `src/stabilizer.py` |
+| Umbrales del filtro de personas y clases COCO complementarias | `--iou-personas`, `--contencion-personas`, `--intervalo-personas` o `DEFAULT_COMPLEMENT_LABELS` en `src/person_filter.py` (si agregas una clase, agrega su regla al JSON) |
+| Confianza mínima | `--min-confidence` o `DEFAULT_MIN_CONFIDENCE` en `src/classifier.py` |
 
-Los pesos del modelo se gestionarán localmente y no se incluirán en el repositorio por defecto si su tamaño o licencia hacen inconveniente distribuirlos. Se documentarán su procedencia, versión y procedimiento de instalación.
+## Escalabilidad y trabajo futuro
 
-## 12. Plan de pruebas
+La arquitectura separa lo que cambia con más frecuencia (reglas, modelos,
+interfaz) de lo que no. Esta sección distingue **lo que ya está preparado**,
+**lo que es posible pero no está hecho** y **los límites actuales**.
 
-La validación se dividirá en pruebas unitarias, pruebas del modelo y pruebas de integración.
+### Preparado para crecer (implementado)
 
-### 12.1. Pruebas unitarias
+| Necesidad | Cómo se hace hoy | Se toca código |
+|---|---|---|
+| Nuevos mensajes, advertencias o nombres de canecas | Editar `data/waste_rules.json`; se valida al cargar y los errores se listan juntos | No |
+| Reglas para un nuevo material que el modelo ya emite | Agregar una regla al JSON con su caneca y su nombre en español | No |
+| Aceptar más objetos de COCO (por ejemplo, otra fruta) | Agregar la clase a `DEFAULT_COMPLEMENT_LABELS` y su regla al JSON | Una línea |
+| Otro modelo YOLO exportado por Ultralytics (por ejemplo, uno reentrenado) | Copiar el `.onnx` y usar `--model`; las etiquetas se leen del propio archivo y las reglas se validan contra ellas | No |
+| Otra normativa o municipio | Otro archivo de reglas con `--rules`; una categoría nueva sin color propio usa un gris por defecto (`CATEGORY_STYLES` en `src/gui.py`) | No (el color, una línea) |
+| Nuevas dudas que la cámara no puede resolver | Agregar un bloque `follow_up` a la regla (pregunta de sí/no que cambia la caneca) | No |
+| Comprobar que un cambio no rompe nada | `pytest`, `scripts/evaluate.py` (precisión) y `scripts/benchmark.py` (latencia) | No |
 
-- Carga correcta de la base de conocimiento.
-- Validación de la estructura de las reglas.
-- Aplicación de reglas para clases conocidas.
-- Gestión de objetos sin reglas asociadas.
-- Manejo de detecciones con confianza insuficiente.
-- Generación de resultados y advertencias esperadas.
+Qué lo hace posible: el detector solo debe cumplir la interfaz `ObjectDetector`
+(`labels` y `detect`), el clasificador solo conoce `Detection` y las reglas, y
+la interfaz solo consume `Recommendation`. Los modelos se descargan fijados por
+commit y con suma SHA-256, así que un cambio externo no pasa desapercibido.
 
-### 12.2. Pruebas de visión artificial
+### Posible, pero no implementado
 
-- Ejecución del modelo con imágenes estáticas.
-- Comprobación de las clases detectadas.
-- Verificación del formato de las salidas.
-- Pruebas con objetos incluidos en el alcance.
-- Pruebas con objetos no contemplados.
-- Manejo de errores durante la inferencia.
+| Mejora | Qué haría falta | Estado |
+|---|---|---|
+| Otra familia de modelos (con otro formato de salida) | Implementar un detector con `labels` y `detect` y registrarlo en `src/model_loader.py` | No probado |
+| Aceleración por GPU | Hoy el proveedor de ONNX Runtime está fijado a CPU (`CPUExecutionProvider`); ONNX Runtime admite otros, pero habría que instalarlos y probarlos | No probado |
+| Mejor precisión de fondo | Reentrenar con fotos propias de los casos que fallan (vasos de vidrio, plásticos transparentes, empaques de snacks): requiere un conjunto de datos etiquetado, cómputo y las herramientas de Ultralytics, con la licencia señalada en `models/README.md` | No iniciado |
+| Otra interfaz (web, móvil o una pantalla junto a la caneca) | Escribir una nueva interfaz sobre `Recommendation`; la lógica no depende de Tkinter | No iniciado |
+| Integración con una caneca física (por ejemplo, abrir la tapa correcta) | Usar `Recommendation.category.id` como señal de salida; no hay hardware ni código para ello | Fuera de alcance |
+| Registro de uso y estadísticas | No existe ningún registro de detecciones | No iniciado |
 
-### 12.3. Pruebas de integración
+### Límites de escalabilidad actuales
 
-- Apertura y cierre de la cámara.
-- Flujo completo desde la captura hasta la recomendación.
-- Visualización de las detecciones y los mensajes.
-- Manejo de errores de ejecución.
-- Comprobación del funcionamiento sin conexión después de preparar el entorno.
+- **Un solo hilo.** La inferencia se ejecuta en el mismo hilo que la ventana
+  (unos 100 a 150 ms por fotograma en las pruebas); con modelos más pesados la
+  interfaz iría a saltos. La solución sería mover la inferencia a un hilo o proceso aparte.
+- **Sin seguimiento de objetos.** El estabilizador cuenta por regla, no por
+  objeto: dos botellas se tratan como una, y una botella nueva mientras la
+  anterior sigue en escena no abre una recomendación nueva.
+- **Dos modelos y COCO en cada fotograma.** El complemento COCO sube la latencia
+  (de unos 112 a unos 147 ms en el servidor de pruebas de 1 núcleo); se puede
+  desactivar con `--sin-complemento-coco`.
+- **Una recomendación por etiqueta.** Una misma etiqueta del modelo siempre da la
+  misma regla; el contexto (suciedad, tipo de empaque) solo se resuelve con las
+  preguntas de verificación.
+- **Una cámara, un usuario, CPU.** No hay varias cámaras ni procesamiento por lotes.
+- **Interfaz sin pruebas automáticas.** La lógica tiene 135 pruebas; la ventana se
+  verificó con un servidor gráfico virtual y de forma manual.
 
-## 13. Criterios de aceptación del MVP
+## Limitaciones
 
-La primera versión se considerará entregable cuando:
+- **Solo 6 materiales.** El modelo reconoce `biodegradable`, `cardboard`, `glass`,
+  `metal`, `paper` y `plastic`. No reconoce pilas, medicamentos, residuos
+  electrónicos ni peligrosos.
+- **No hay clase "no aprovechable".** El recipiente negro solo se alcanza
+  respondiendo la pregunta de verificación. Si el modelo no reconoce un empaque,
+  no habrá pregunta.
+- **Siempre elige un material.** Fuera de su dominio puede inventar uno. El filtro
+  de personas reduce el caso más frecuente, pero otros objetos (un perro, por
+  ejemplo) pueden recibir una etiqueta de residuo.
+- **Plásticos transparentes en la mano.** El modelo de residuos dio solo 0.24 a 0.43
+  de confianza para `plastic` en una botella transparente sostenida a mano con fondo
+  desordenado (por debajo del umbral). Las botellas se rescatan con el complemento
+  COCO (`botella`, con aviso de verificar material y contenido), pero otros envases
+  plásticos en condiciones similares pueden no reconocerse.
+- **Vidrio y metal se confunden.** El modelo reconoce bien botellas y frascos de vidrio
+  (119 de 120 imágenes de prueba), pero un vaso de vidrio se clasificó como metal
+  (88 %) en todas las variaciones probadas. Como ambos materiales van al recipiente
+  blanco, la regla los muestra juntos como "vidrio o metal" en vez de afirmar un
+  material que puede estar equivocado. El recipiente recomendado es el correcto.
+- **Orgánicos menos fiables.** El autor del modelo reporta `biodegradable` como su
+  clase más débil (recall 0.56), y en pruebas una naranja se reconoció con baja
+  confianza.
+- **Filtro de personas.** Un objeto muy grande y muy cerca de la cámara puede
+  confundirse con la persona y descartarse; los umbrales son ajustables.
+- **No se ve la suciedad ni el contenido.** Por eso las recomendaciones piden que
+  el residuo esté limpio y seco.
+- **Sensible a distancia e iluminación.** El modelo se entrenó con objetos a
+  distancia media.
+- **Validación parcial.** Ver [Estado real](#estado-real-de-la-implementación).
 
-- La aplicación pueda iniciarse en el entorno documentado.
-- La cámara pueda capturar imágenes correctamente.
-- El modelo seleccionado pueda ejecutarse localmente.
-- Se reconozcan las clases concretas incluidas en el alcance de la demostración.
-- El motor de reglas genere las recomendaciones esperadas para los casos de prueba.
-- Los objetos desconocidos o las predicciones inciertas no generen clasificaciones definitivas injustificadas.
-- Los resultados sean visibles en la interfaz.
-- Las pruebas principales puedan ejecutarse y sus resultados estén documentados.
-- La aplicación funcione sin conexión una vez instaladas las dependencias y disponibles los archivos del modelo.
-- Las instrucciones de instalación y ejecución correspondan con el código implementado.
+## Modelos, licencias y fuentes
 
-El criterio de éxito será demostrar un flujo completo y verificable, no reconocer todos los residuos posibles.
+Detalle completo (procedencia, SHA-256, etiquetas y licencias) en
+[`models/README.md`](models/README.md). Resumen:
 
-## 14. Privacidad y funcionamiento sin conexión
+- **Residuos:** `waste_yolo11n.onnx` (YOLO11n, repositorio `shshodiyev162-max/Waste-detector`).
+  El repositorio declara MIT, pero los metadatos del ONNX indican AGPL-3.0 de
+  Ultralytics: **la licencia efectiva no está confirmada**. Uso académico y local.
+- **Filtro de personas:** `yolox_nano.onnx` (y opcionalmente `yolox_s.onnx`),
+  YOLOX de Megvii, Apache-2.0 según el repositorio oficial.
+- **Normativa:** Resolución 2184 de 2019 del Ministerio de Ambiente y Desarrollo
+  Sostenible de Colombia.
 
-ChavitoBins priorizará el procesamiento local.
+## Guion sugerido para la demostración
 
-Durante la ejecución normal:
-
-- Las imágenes no se enviarán a APIs externas.
-- No se dependerá de servicios de IA en la nube.
-- No se almacenarán imágenes de forma persistente salvo que esa función se incorpore y documente expresamente.
-- Las dependencias y el modelo deberán estar disponibles localmente antes de iniciar la ejecución sin conexión.
-
-La instalación inicial podrá requerir conexión a internet para descargar dependencias y obtener el modelo. Una vez preparado el entorno, la inferencia y la clasificación deberán funcionar sin conexión.
-
-## 15. Limitaciones previstas
-
-- La capacidad de reconocimiento dependerá de las clases y del entrenamiento del modelo seleccionado.
-- La iluminación, el ángulo, el fondo y la oclusión pueden afectar los resultados.
-- La apariencia visual no siempre permite determinar la composición o el estado de un residuo.
-- Un modelo genérico puede no distinguir materiales relevantes para su separación.
-- La calidad de las recomendaciones dependerá de la cobertura y validez de las reglas.
-- El rendimiento dependerá del procesador, la memoria y el hardware disponible.
-- La aplicación será una herramienta de orientación y no sustituirá las instrucciones oficiales para la gestión de residuos peligrosos.
-
-## 16. Plan de desarrollo
-
-El trabajo se organizará por etapas para reducir riesgos y priorizar el funcionamiento integral.
-
-1. **Definición del alcance:** seleccionar las clases objetivo y establecer los criterios de aceptación.
-2. **Validación del modelo:** comprobar compatibilidad, licencia y capacidad de detección.
-3. **Captura e inferencia:** implementar la cámara y la ejecución local del modelo.
-4. **Motor de reglas:** crear la base de conocimiento y la lógica de clasificación.
-5. **Integración visual:** conectar los módulos y mostrar las recomendaciones.
-6. **Pruebas y documentación:** verificar el flujo completo, corregir errores y preparar la demostración.
-
-Se priorizará un sistema pequeño que funcione de principio a fin antes de ampliar la cantidad de clases o incorporar funcionalidades adicionales.
----
-
-## 17. Resultado esperado
-
-ChavitoBins busca demostrar que un modelo de visión artificial ejecutado localmente, combinado con un motor de reglas explícitas, puede ofrecer orientación práctica para la separación de un conjunto limitado de residuos.
-
-El diseño prioriza la privacidad, el funcionamiento sin conexión, la separación de responsabilidades, la trazabilidad de las recomendaciones y un alcance técnicamente verificable.
-
-El objetivo del MVP es entregar una aplicación funcional, documentada y demostrable, sobre la cual puedan construirse futuras mejoras.
+1. Abrir `python app.py`, mostrar el HUD vacío y pulsar *Iniciar cámara*.
+2. **Verde:** una fruta entera frente a la cámara → franja verde.
+3. **Blanca:** una botella o lata limpia → franja blanca; mostrar la pregunta.
+4. **Negra:** un empaque de papas o snack vacío → el panel pregunta; responder
+   **Sí** → franja negra. *Probar antes con el empaque real* (ver `docs/test-plan.md`).
+5. **Personas:** quedar frente a la cámara sin objeto → no aparece ninguna recomendación.
+6. Explicar las limitaciones: seis materiales, el negro por pregunta y el
+   funcionamiento sin conexión.
