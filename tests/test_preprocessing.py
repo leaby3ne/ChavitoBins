@@ -45,3 +45,23 @@ def test_load_image_bgr_invalid_file_raises(tmp_path):
 
     with pytest.raises(ImageLoadError):
         load_image_bgr(path)
+
+
+def test_letterbox_normalize_rgb_swaps_channels_and_scales_to_unit_range():
+    image = np.zeros((10, 10, 3), dtype=np.uint8)
+    image[:, :] = (0, 0, 255)  # rojo puro en BGR
+
+    result = letterbox(image, input_size=10, normalize_rgb=True)
+
+    assert result.tensor.max() <= 1.0
+    assert result.tensor[0, 0, 0, 0] == pytest.approx(1.0)  # canal R
+    assert result.tensor[0, 2, 0, 0] == pytest.approx(0.0)  # canal B
+
+
+def test_letterbox_default_keeps_bgr_and_raw_values():
+    image = np.zeros((10, 10, 3), dtype=np.uint8)
+    image[:, :] = (0, 0, 255)
+
+    result = letterbox(image, input_size=10)
+
+    assert result.tensor[0, 2, 0, 0] == 255.0  # el rojo sigue siendo el último canal

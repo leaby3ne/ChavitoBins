@@ -108,3 +108,8 @@ def test_real_model_detects_known_objects():
     labels = {d.label for d in detector.detect(load_image_bgr(SAMPLE_IMAGE))}
 
     assert {"dog", "bicycle"} <= labels
+
+
+@pytest.mark.skipif(not MODEL_PATH.is_file(), reason="Needs models/yolox_s.onnx")
+def test_yolox_detector_exposes_coco_labels():
+    assert YoloxDetector(MODEL_PATH).labels == COCO_CLASSES

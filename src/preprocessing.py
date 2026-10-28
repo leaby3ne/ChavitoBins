@@ -2,8 +2,10 @@
 
 Convención interna: las imágenes son arreglos ``uint8`` de forma
 (alto, ancho, 3) con los canales en orden BGR (la convención de OpenCV).
-YOLOX se entrenó con imágenes BGR y valores crudos 0-255, así que NO se
-intercambian canales ni se normaliza.
+YOLOX se entrenó con imágenes BGR y valores crudos 0-255, así que por defecto
+NO se intercambian canales ni se normaliza. Los modelos exportados por
+Ultralytics (YOLOv8/11) esperan RGB con valores 0-1: se activa con
+``normalize_rgb=True``.
 """
 
 from __future__ import annotations
@@ -45,7 +47,9 @@ def load_image_bgr(path: Path) -> np.ndarray:
     return np.ascontiguousarray(rgb[:, :, ::-1])
 
 
-def letterbox(image_bgr: np.ndarray, input_size: int) -> PreprocessedImage:
+def letterbox(
+    image_bgr: np.ndarray, input_size: int, normalize_rgb: bool = False
+) -> PreprocessedImage:
     """Redimensiona conservando la proporción, rellena hasta un cuadrado y arma el tensor.
 
     Se usa "letterbox" en lugar de estirar la imagen para no deformar los
@@ -71,8 +75,13 @@ def letterbox(image_bgr: np.ndarray, input_size: int) -> PreprocessedImage:
     canvas = np.full((input_size, input_size, 3), PAD_VALUE, dtype=np.uint8)
     canvas[:new_height, :new_width] = resized
 
+    if normalize_rgb:
+        # Modelos Ultralytics: canales RGB y valores en el rango 0-1.
+        canvas = canvas[:, :, ::-1]
     # (alto, ancho, canal) -> (1, canal, alto, ancho), como espera el modelo.
     tensor = canvas.transpose(2, 0, 1)[np.newaxis].astype(np.float32)
+    if normalize_rgb:
+        tensor /= 255.0
     return PreprocessedImage(
         tensor=np.ascontiguousarray(tensor),
         ratio=ratio,

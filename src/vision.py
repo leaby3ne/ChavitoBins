@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 import numpy as np
 import onnxruntime as ort
@@ -21,6 +22,7 @@ from src.preprocessing import letterbox
 # YOLOX predice en tres escalas; cada stride es cuántos píxeles de la imagen
 # de entrada cubre una celda de la rejilla en esa escala.
 STRIDES = (8, 16, 32)
+DEFAULT_INPUT_SIZE = 640  # tamaño de entrada de la mayoría de los modelos YOLO
 BOX_VALUES = 4  # cx, cy, w, h
 OBJECTNESS_VALUES = 1  # probabilidad de que la celda contenga algún objeto
 
@@ -41,6 +43,17 @@ class Detection:
     label: str
     confidence: float
     box: tuple[float, float, float, float]  # x1, y1, x2, y2
+
+
+class ObjectDetector(Protocol):
+    """Lo que el resto de la app necesita de un detector, sea del modelo que sea."""
+
+    @property
+    def labels(self) -> tuple[str, ...]:
+        """Etiquetas que el modelo puede producir."""
+
+    def detect(self, image_bgr: np.ndarray) -> list[Detection]:
+        """Detecta objetos en una imagen BGR."""
 
 
 def build_grids(input_size: int) -> tuple[np.ndarray, np.ndarray]:
@@ -157,7 +170,7 @@ class YoloxDetector:
     def __init__(
         self,
         model_path: Path,
-        input_size: int = 640,
+        input_size: int = DEFAULT_INPUT_SIZE,
         score_threshold: float = 0.25,
         iou_threshold: float = 0.45,
         labels: tuple[str, ...] = COCO_CLASSES,
@@ -170,6 +183,11 @@ class YoloxDetector:
         self._grid, self._strides = build_grids(input_size)
         self._session = self._load_session(Path(model_path))
         self._input_name = self._session.get_inputs()[0].name
+
+    @property
+    def labels(self) -> tuple[str, ...]:
+        """Etiquetas que produce este modelo (las 80 clases COCO)."""
+        return self._labels
 
     def _load_session(self, model_path: Path) -> ort.InferenceSession:
         if not model_path.is_file():
