@@ -193,9 +193,19 @@ class YoloxDetector:
         if not model_path.is_file():
             raise ModelLoadError(f"Model file not found: {model_path}")
         try:
+            options = ort.SessionOptions()
+            options.intra_op_num_threads = 6
+            options.inter_op_num_threads = 1
+            options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+            options.graph_optimization_level = (
+                ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+            )
+
             # Solo CPU: es lo que garantiza que funcione en cualquier equipo.
             session = ort.InferenceSession(
-                str(model_path), providers=["CPUExecutionProvider"]
+                str(model_path),
+                sess_options=options,
+                providers=["CPUExecutionProvider"],
             )
         except Exception as exc:  # onnxruntime lanza varios tipos de error
             raise ModelLoadError(f"Cannot load model '{model_path}': {exc}") from exc
