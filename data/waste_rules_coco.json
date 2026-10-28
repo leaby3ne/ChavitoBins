@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "categories": {
+    "green_bin": {
+      "name": "Recipiente verde",
+      "description": "Residuos orgánicos aprovechables."
+    },
+    "white_bin": {
+      "name": "Recipiente blanco",
+      "description": "Residuos aprovechables limpios y secos: plástico, vidrio, metales, multicapa, papel y cartón."
+    },
+    "black_bin": {
+      "name": "Recipiente negro",
+      "description": "Residuos no aprovechables."
+    }
+  },
+  "rules": [
+    {
+      "id": "organic_001",
+      "classes": ["banana", "apple", "orange", "broccoli", "carrot"],
+      "names": {
+        "banana": "banana",
+        "apple": "manzana",
+        "orange": "naranja",
+        "broccoli": "brócoli",
+        "carrot": "zanahoria"
+      },
+      "category": "green_bin",
+      "recommendation": "Los restos de frutas y verduras (cáscaras y partes no consumibles) van en el recipiente verde de orgánicos aprovechables.",
+      "warnings": [
+        "Esta recomendación aplica a restos crudos. Si hay alimentos cocidos o mezclados, consulta las indicaciones de tu servicio de aseo."
+      ],
+      "requires_verification": false
+    },
+    {
+      "id": "bottle_001",
+      "classes": ["bottle"],
+      "names": {"bottle": "botella"},
+      "category": "white_bin",
+      "recommendation": "Si la botella es de plástico o vidrio y está limpia y seca, va en el recipiente blanco.",
+      "warnings": [
+        "El sistema reconoce la forma del objeto, no su material ni su contenido.",
+        "Si contuvo sustancias peligrosas (por ejemplo, químicos o plaguicidas), consulta las indicaciones de manejo del producto antes de desecharla."
+      ],
+      "requires_verification": true
+    },
+    {
+      "id": "paper_001",
+      "classes": ["book"],
+      "names": {"book": "libro"},
+      "category": "white_bin",
+      "recommendation": "El papel y el cartón limpios y secos van en el recipiente blanco.",
+      "warnings": [
+        "Si está mojado, sucio o con grasa, deja de ser aprovechable y va en el recipiente negro.",
+        "Considera también donarlo o reutilizarlo antes de desecharlo."
+      ],
+      "requires_verification": true
+    }
+  ]
+}

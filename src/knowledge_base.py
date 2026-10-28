@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -31,17 +32,37 @@ class Category:
 
 
 @dataclass(frozen=True)
+class FollowUp:
+    """Pregunta de sí/no para casos que la cámara no puede decidir sola.
+
+    Ejemplo: el modelo ve "plástico", pero no sabe si es un empaque metalizado
+    de snacks (recipiente negro) o un envase limpio (recipiente blanco). Si el
+    usuario responde que sí, la recomendación pasa a ``yes_category_id``.
+    """
+
+    question: str
+    yes_category_id: str
+    yes_recommendation: str
+    yes_warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class Rule:
     """Relaciona una o más etiquetas del modelo con una categoría y una recomendación."""
 
     id: str
     classes: tuple[str, ...]
+    # Nombre en español de cada clase del modelo, para mostrarlo al usuario.
+    # Es un mapeo explícito: la interfaz nunca muestra la etiqueta en inglés.
+    names: Mapping[str, str]
     category_id: str
     recommendation: str
     warnings: tuple[str, ...] = ()
     # True cuando la imagen no basta para decidir (material, contenido, estado):
     # el sistema muestra la recomendación como provisional.
     requires_verification: bool = False
+    # Pregunta opcional que puede cambiar la recomendación (por ejemplo, al negro).
+    follow_up: FollowUp | None = None
 
 
 def _is_text(value: Any) -> bool:
@@ -68,6 +89,40 @@ def _parse_categories(raw: Any, errors: list[str]) -> dict[str, Category]:
             id=category_id, name=entry["name"], description=entry["description"]
         )
     return categories
+
+
+def _parse_follow_up(
+    raw: Any, categories: dict[str, Category], problems: list[str]
+) -> FollowUp | None:
+    """Valida el bloque opcional ``follow_up`` de una regla."""
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        problems.append("'follow_up' must be an object")
+        return None
+
+    before = len(problems)
+    if not _is_text(raw.get("question")):
+        problems.append("'follow_up.question' is missing or empty")
+    yes_category = raw.get("yes_category")
+    if not _is_text(yes_category) or yes_category not in categories:
+        problems.append(
+            f"'follow_up.yes_category' '{yes_category}' is not defined in 'categories'"
+        )
+    if not _is_text(raw.get("yes_recommendation")):
+        problems.append("'follow_up.yes_recommendation' is missing or empty")
+    yes_warnings = raw.get("yes_warnings", [])
+    if not (isinstance(yes_warnings, list) and all(_is_text(w) for w in yes_warnings)):
+        problems.append("'follow_up.yes_warnings' must be a list of non-empty strings")
+
+    if len(problems) > before:
+        return None
+    return FollowUp(
+        question=raw["question"],
+        yes_category_id=yes_category,
+        yes_recommendation=raw["yes_recommendation"],
+        yes_warnings=tuple(yes_warnings),
+    )
 
 
 def _parse_rule(
@@ -102,6 +157,20 @@ def _parse_rule(
     if not _is_text(entry.get("recommendation")):
         problems.append("missing or empty 'recommendation'")
 
+    names = entry.get("names")
+    if not (
+        isinstance(names, dict)
+        and names
+        and all(_is_text(k) and _is_text(v) for k, v in names.items())
+    ):
+        problems.append("'names' must map each class to its Spanish display name")
+        names = {}
+    elif classes and set(names) != set(classes):
+        problems.append(
+            f"'names' keys must match 'classes' exactly "
+            f"(classes: {sorted(classes)}, names: {sorted(names)})"
+        )
+
     category_id = entry.get("category")
     if not _is_text(category_id):
         problems.append("missing or empty 'category'")
@@ -120,6 +189,8 @@ def _parse_rule(
 
     # Detecta etiquetas mal escritas: si no coinciden con las del modelo, la
     # regla nunca se aplicaría y el error pasaría desapercibido.
+    follow_up = _parse_follow_up(entry.get("follow_up"), categories, problems)
+
     if known_labels is not None:
         for label in classes:
             if label not in known_labels:
@@ -131,10 +202,12 @@ def _parse_rule(
     return Rule(
         id=entry["id"],
         classes=tuple(classes),
+        names=dict(names),
         category_id=category_id,
         recommendation=entry["recommendation"],
         warnings=tuple(warnings),
         requires_verification=requires_verification,
+        follow_up=follow_up,
     )
 
 
@@ -232,6 +305,7 @@ class KnowledgeBase:
 
     @property
     def rules(self) -> tuple[Rule, ...]:
+        """Todas las reglas cargadas, en el orden del archivo."""
         return self._rules
 
     def find_rule(self, label: str) -> Rule | None:

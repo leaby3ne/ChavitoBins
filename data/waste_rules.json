@@ -3,7 +3,7 @@
   "categories": {
     "green_bin": {
       "name": "Recipiente verde",
-      "description": "Residuos orgánicos aprovechables."
+      "description": "Residuos orgánicos aprovechables: restos de comida, cáscaras y desechos agrícolas."
     },
     "white_bin": {
       "name": "Recipiente blanco",
@@ -11,27 +11,133 @@
     },
     "black_bin": {
       "name": "Recipiente negro",
-      "description": "Residuos no aprovechables."
-    },
-    "special_collection": {
-      "name": "Recolección especial",
-      "description": "Residuos que no van en los recipientes domésticos y requieren un punto de recolección específico."
+      "description": "Residuos no aprovechables: papel higiénico, servilletas, papeles y cartones contaminados con comida, papeles metalizados, entre otros."
     }
   },
   "rules": [
     {
       "id": "organic_001",
-      "classes": ["banana", "apple", "orange"],
+      "classes": [
+        "biodegradable"
+      ],
+      "names": {
+        "biodegradable": "orgánico"
+      },
       "category": "green_bin",
-      "recommendation": "Los restos de fruta (cáscaras y partes no consumibles) van en el recipiente verde de orgánicos aprovechables.",
+      "recommendation": "Los residuos orgánicos aprovechables (restos de frutas, verduras y comida) van en el recipiente verde.",
       "warnings": [
-        "Esta recomendación aplica a restos de fruta cruda. Si hay alimentos cocidos o mezclados, consulta las indicaciones de tu servicio de aseo."
+        "Es el reconocimiento menos confiable del sistema: confirma a simple vista que sea un residuo orgánico.",
+        "Esta recomendación aplica a restos crudos. Si hay alimentos cocidos o mezclados, consulta las indicaciones de tu servicio de aseo."
+      ],
+      "requires_verification": true
+    },
+    {
+      "id": "paper_001",
+      "classes": [
+        "paper",
+        "cardboard"
+      ],
+      "names": {
+        "paper": "papel",
+        "cardboard": "cartón"
+      },
+      "category": "white_bin",
+      "recommendation": "El papel y el cartón limpios y secos van en el recipiente blanco.",
+      "warnings": [],
+      "requires_verification": false,
+      "follow_up": {
+        "question": "¿Está mojado, sucio, con grasa o comida, o es un papel metalizado?",
+        "yes_category": "black_bin",
+        "yes_recommendation": "El papel y el cartón contaminados con comida o grasa, las servilletas usadas y los papeles metalizados no son aprovechables: van en el recipiente negro.",
+        "yes_warnings": [
+          "Si tienes dudas sobre un caso concreto, consulta las indicaciones de tu servicio de aseo."
+        ]
+      }
+    },
+    {
+      "id": "glass_metal_001",
+      "classes": [
+        "glass",
+        "metal"
+      ],
+      "names": {
+        "glass": "vidrio o metal",
+        "metal": "vidrio o metal"
+      },
+      "category": "white_bin",
+      "recommendation": "Los envases y objetos de vidrio o metal limpios y secos van en el recipiente blanco.",
+      "warnings": [
+        "El sistema a veces confunde el vidrio con el metal (por ejemplo, un vaso de vidrio), pero ambos van en el recipiente blanco.",
+        "Enjuágalo para retirar restos de comida o líquido. Si es de vidrio y está roto, manéjalo con cuidado para evitar cortes.",
+        "Si es una pila, una batería o un aparato electrónico, no lo deposites aquí: requiere un punto de recolección especial."
+      ],
+      "requires_verification": false,
+      "follow_up": {
+        "question": "¿Es un empaque metalizado (por ejemplo, de papas o snacks) o está sucio con comida?",
+        "yes_category": "black_bin",
+        "yes_recommendation": "Los empaques metalizados (como las bolsas de papas y snacks) y los envases sucios con comida no son aprovechables: van en el recipiente negro.",
+        "yes_warnings": [
+          "La norma menciona los \"papeles metalizados\"; los empaques de snacks se tratan como tales.",
+          "Si tienes dudas sobre un empaque concreto, consulta las indicaciones de tu servicio de aseo."
+        ]
+      }
+    },
+    {
+      "id": "plastic_001",
+      "classes": [
+        "plastic"
+      ],
+      "names": {
+        "plastic": "plástico"
+      },
+      "category": "white_bin",
+      "recommendation": "Los envases de plástico limpios y secos van en el recipiente blanco.",
+      "warnings": [
+        "El sistema no distingue tipos de plástico ni su estado.",
+        "Si contuvo sustancias peligrosas (por ejemplo, químicos o plaguicidas), consulta las indicaciones de manejo del producto."
+      ],
+      "requires_verification": false,
+      "follow_up": {
+        "question": "¿Es un empaque de snack o papas fritas, una envoltura metalizada o está sucio con comida?",
+        "yes_category": "black_bin",
+        "yes_recommendation": "Los empaques metalizados (como las bolsas de papas y snacks), las envolturas y los plásticos sucios con comida no son aprovechables: van en el recipiente negro.",
+        "yes_warnings": [
+          "La norma menciona los \"papeles metalizados\"; los empaques de snacks se tratan como tales.",
+          "Si tienes dudas sobre un empaque concreto, consulta las indicaciones de tu servicio de aseo."
+        ]
+      }
+    },
+    {
+      "id": "organic_002",
+      "classes": [
+        "banana",
+        "apple",
+        "orange",
+        "broccoli",
+        "carrot"
+      ],
+      "names": {
+        "banana": "banana",
+        "apple": "manzana",
+        "orange": "naranja",
+        "broccoli": "brócoli",
+        "carrot": "zanahoria"
+      },
+      "category": "green_bin",
+      "recommendation": "Los restos de frutas y verduras (cáscaras y partes no consumibles) van en el recipiente verde de orgánicos aprovechables.",
+      "warnings": [
+        "Esta recomendación aplica a restos crudos. Si hay alimentos cocidos o mezclados, consulta las indicaciones de tu servicio de aseo."
       ],
       "requires_verification": false
     },
     {
       "id": "bottle_001",
-      "classes": ["bottle"],
+      "classes": [
+        "bottle"
+      ],
+      "names": {
+        "bottle": "botella"
+      },
       "category": "white_bin",
       "recommendation": "Si la botella es de plástico o vidrio y está limpia y seca, va en el recipiente blanco.",
       "warnings": [
@@ -39,27 +145,6 @@
         "Si contuvo sustancias peligrosas (por ejemplo, químicos o plaguicidas), consulta las indicaciones de manejo del producto antes de desecharla."
       ],
       "requires_verification": true
-    },
-    {
-      "id": "paper_001",
-      "classes": ["book"],
-      "category": "white_bin",
-      "recommendation": "El papel y el cartón limpios y secos van en el recipiente blanco.",
-      "warnings": [
-        "Si está mojado, sucio o con grasa, deja de ser aprovechable y va en el recipiente negro.",
-        "Considera también donarlo o reutilizarlo antes de desecharlo."
-      ],
-      "requires_verification": true
-    },
-    {
-      "id": "electronics_001",
-      "classes": ["cell phone"],
-      "category": "special_collection",
-      "recommendation": "No lo deposites en los recipientes blanco, verde ni negro. Llévalo a un punto de recolección de residuos electrónicos o a un programa posconsumo.",
-      "warnings": [
-        "Verifica qué puntos de recolección existen en tu ciudad."
-      ],
-      "requires_verification": false
     }
   ]
 }
