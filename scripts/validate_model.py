@@ -1,7 +1,7 @@
 """Verificación de la etapa 1: ¿el modelo carga y detecta objetos en una imagen estática?
 
 Uso (desde la raíz del proyecto):
-    python -m scripts.validate_model models/yolox_s.onnx samples/dog.jpg
+    python -m scripts.validate_model models/waste_yolo11n.onnx samples/apple.jpg
 """
 
 from __future__ import annotations
@@ -13,10 +13,11 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from src.preprocessing import load_image_bgr
-from src.vision import YoloxDetector
+from src.model_loader import create_detector
 
 
 def main() -> None:
+    """Carga el modelo, detecta sobre una imagen y guarda una copia con las cajas."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("model", type=Path)
     parser.add_argument("image", type=Path)
@@ -24,7 +25,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("validation_output.jpg"))
     args = parser.parse_args()
 
-    detector = YoloxDetector(args.model, score_threshold=args.threshold)
+    detector = create_detector(args.model, score_threshold=args.threshold)
     image = load_image_bgr(args.image)
 
     detector.detect(image)  # ejecución de calentamiento, no se incluye en la medición
