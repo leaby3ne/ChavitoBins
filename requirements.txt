@@ -1,4 +1,5 @@
 numpy
 onnxruntime>=1.24
-pillow
+pillow>=10.1
+opencv-python
 pytest

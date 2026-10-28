@@ -3,5 +3,7 @@ __pycache__/
 .venv/
 .pytest_cache/
 models/*.onnx
-validation_output.jpg
 samples/
+validation_output.jpg
+camera_test.jpg
+eval/
