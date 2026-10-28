@@ -263,7 +263,7 @@ La arquitectura separa lo que cambia con más frecuencia (reglas, modelos,
 interfaz) de lo que no. Esta sección distingue **lo que ya está preparado**,
 **lo que es posible pero no está hecho** y **los límites actuales**.
 
-### Preparado para crecer (implementado)
+# Preparado para crecer (implementado)
 
 | Necesidad | Cómo se hace hoy | Se toca código |
 |---|---|---|
@@ -353,14 +353,3 @@ Detalle completo (procedencia, SHA-256, etiquetas y licencias) en
   YOLOX de Megvii, Apache-2.0 según el repositorio oficial.
 - **Normativa:** Resolución 2184 de 2019 del Ministerio de Ambiente y Desarrollo
   Sostenible de Colombia.
-
-## Guion sugerido para la demostración
-
-1. Abrir `python app.py`, mostrar el HUD vacío y pulsar *Iniciar cámara*.
-2. **Verde:** una fruta entera frente a la cámara → franja verde.
-3. **Blanca:** una botella o lata limpia → franja blanca; mostrar la pregunta.
-4. **Negra:** un empaque de papas o snack vacío → el panel pregunta; responder
-   **Sí** → franja negra. *Probar antes con el empaque real* (ver `docs/test-plan.md`).
-5. **Personas:** quedar frente a la cámara sin objeto → no aparece ninguna recomendación.
-6. Explicar las limitaciones: seis materiales, el negro por pregunta y el
-   funcionamiento sin conexión.
